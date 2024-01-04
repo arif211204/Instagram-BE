@@ -8,53 +8,27 @@ const {
 } = require('./routes');
 
 require('dotenv').config();
-// const { db_username, db_password, db_database, db_host, db_dialect, db_port } =
-//   process.env;
+const { db_username, db_password, db_database, db_host, db_dialect, db_port } =
+  process.env;
 
-const {
-  MYSQL_USER,
-  MYSQL_PASSWORD,
-  MYSQL_DATABASE,
-  MYSQL_HOST,
-  MYSQL_DIALECT,
-  MYSQL_PORT,
-} = process.env;
+
 const express = require('express');
 const PORT = process.env.PORT || 2000;
 const app = express();
 const cors = require('cors');
 const db = require('./models');
 const bearerToken = require('express-bearer-token');
-const mysql = require('mysql2');
+const mysql = require('mysql');
+
 
 const options = {
-  host: MYSQL_HOST,
-  port: MYSQL_PORT,
-  user: MYSQL_USER,
-  password: MYSQL_PASSWORD,
-  database: MYSQL_DATABASE,
+  host: 'localhost',
+  port: 3306,
+  user: 'root',
+  password: 'password',
+  database: 'instagram',
 };
-// console.log(options);
-// const options = {
-//   host: db_host,
-//   port: db_port,
-//   user: db_username,
-//   password: db_password,
-//   database: db_database,
-// };
-const connection = mysql.createConnection(options);
 
-async function connectToDatabase() {
-  try {
-    await connection.connect();
-    console.log('connecting to the database');
-  } catch (err) {
-    console.error('Error connecting to the database:', err);
-  }
-}
-
-connectToDatabase();
-console.log(options);
 //socket io
 const http = require('http');
 const server = http.createServer(app);
@@ -107,5 +81,18 @@ app.get(
 
 server.listen(PORT, () => {
   console.log(`listen on port ${PORT}`);
-  // db.sequelize.sync({ alter: true });
+  db.sequelize.sync({ alter: true });
 });
+const connection = mysql.createConnection(options);
+
+async function connectToDatabase() {
+  try {
+    await connection.connect();
+    console.log('connecting to the database');
+  } catch (err) {
+    console.error('Error connecting to the database:', err);
+  }
+}
+
+connectToDatabase();
+console.log(options);

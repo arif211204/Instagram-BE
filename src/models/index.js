@@ -8,11 +8,11 @@ const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'production';
 
 // Load your environment variables here
-const database = process.env.MYSQL_DATABASE;
-const username = process.env.MYSQL_USER;
-const password = process.env.MYSQL_PASSWORD;
-const host = process.env.MYSQL_HOST;
-const port = process.env.MYSQL_PORT;
+const database = process.env.db_database;
+const username = process.env.db_username;
+const password = process.env.db_password;
+const host = process.env.db_host;
+const port = process.env.db_port;
 
 const config = {
   database,
