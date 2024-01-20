@@ -28,12 +28,13 @@ route.patch(
   }).single('image'),
   authController.editProfile.bind(authController)
 );
+//register2
 route.post(
   '/v1',
   userValidationRules(),
   validate,
   authController.register.bind(authController)
-); //register
+); 
 route.post('/v2', authController.login.bind(authController)); //login
 route.post(
   '/test',
@@ -54,4 +55,7 @@ route.post(
 );
 
 route.post('/verify/token', authController.verifyUser.bind(authController));
+
+route.post('/v3', authController.loginWithGoogle.bind(authController));
+
 module.exports = route;

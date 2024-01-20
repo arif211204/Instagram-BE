@@ -8,8 +8,7 @@ const {
 } = require('./routes');
 
 require('dotenv').config();
-const { db_username, db_password, db_database, db_host, db_dialect, db_port } =
-  process.env;
+
 
 
 const express = require('express');
@@ -19,8 +18,15 @@ const cors = require('cors');
 const db = require('./models');
 const bearerToken = require('express-bearer-token');
 const mysql = require('mysql');
+const bodyParser = require('body-parser');
 
 
+//////////////////////////////////////////////////////////////
+
+
+
+
+//////////////////////////////////////////////////////////////
 const options = {
   host: 'localhost',
   port: 3306,
@@ -38,6 +44,7 @@ const io = new Server(server, { cors: { origin: '*' } });
 global.io = io;
 module.exports = { io };
 
+const messages = [];
 io.on('connection', (socket) => {
   console.log('user connected');
 
@@ -55,6 +62,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 app.use(bearerToken());
+app.use(bodyParser.json());
 app.use('/auth', authRoutes);
 app.use('/posts', PostRoutes);
 app.use('/comments', commentRoutes);
@@ -81,7 +89,7 @@ app.get(
 
 server.listen(PORT, () => {
   console.log(`listen on port ${PORT}`);
-  db.sequelize.sync({ alter: true });
+  // db.sequelize.sync({ alter: true });
 });
 const connection = mysql.createConnection(options);
 

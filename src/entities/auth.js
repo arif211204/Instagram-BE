@@ -7,6 +7,13 @@ const sharp = require('sharp');
 const mailer = require('../lib/nodemailer');
 const fs = require('fs');
 const mustache = require('mustache');
+const path = require('path');
+const { verify } = require('jsonwebtoken');
+
+const firebaseConfigPath = path.join(__dirname, '..', 'config', 'privateKeyFirebase.json');
+const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, 'utf8'));
+
+const firebasePrivateKey = firebaseConfig.private_key.replace(/\\n/g, '\n');
 
 class Auth extends Entity {
   constructor(model) {
@@ -19,6 +26,7 @@ class Auth extends Entity {
         [db.Sequelize.Op.or]: {
           email: { [db.Sequelize.Op.like]: `%${user}%` },
           username: { [db.Sequelize.Op.like]: `%${user}%` },
+          
           phone_number: { [db.Sequelize.Op.like]: `%${user}%` },
         },
       },
@@ -38,6 +46,7 @@ class Auth extends Entity {
               moment(result.dataValues.suspended_date).diff(moment().format()) /
               1000
             } sec`
+
           );
 
         const isValid = await bcrypt.compare(
@@ -74,7 +83,6 @@ class Auth extends Entity {
 
         const payload = {
           id: result.dataValues.id,
-          is_verified: result.dataValues.is_verified,
         };
 
         const token = jwt.sign(payload, process.env.jwt_secret, {
@@ -109,69 +117,74 @@ class Auth extends Entity {
       //  this.create(req, res);
       await db.User.create({ ...req.body }).then((user) => {
         console.log(user);
-        const template = fs
-          .readFileSync(__dirname + '/../template/verify.html')
-          .toString();
-
-        const token = jwt.sign(
-          {
-            id: user.dataValues.id,
-            is_verified: user.dataValues.is_verified,
-          },
-          process.env.jwt_secret,
-          {
-            expiresIn: '5min',
-          }
-        );
-        const rendered = mustache.render(template, {
-          username: user.dataValues.username,
-          fullname: user.dataValues.fullname,
-          verify_url: process.env.verified_url + token,
-        });
-
-        mailer({
-          subject: 'User Verification',
-          html: rendered,
-          //  to: 'truecuks19@gmail.com'
-          //  to: 'jordansumardi@gmail.com'
-          to: user.dataValues.email,
-        });
       });
       res.send('success');
     } catch (err) {
       res.status(500).send(err?.message);
     }
   }
-  async keepLogin(req, res) {
-    try {
-      const { token } = req;
-      const data = jwt.verify(token, process.env.jwt_secret);
-      console.log(data);
-      if (!data.id) throw new Error('invalid token');
+async loginWithGoogle(req, res) {
+  try {
+    const newUser = req.body;
 
-      console.log(data);
+    newUser.phone_number = newUser.phone_number || null;
+    newUser.uid_facebook = newUser.uid_facebook || null;
 
-      const payload = await db.User.findOne({
-        where: {
-          id: data.id,
-        },
+
+    const existingUser = await db.User.findOne({
+      where: {
+        email: newUser.email,
+      },
+    });
+
+    if (existingUser) {
+      res.status(200).json(existingUser);
+    } else {
+      await db.User.create({
+        ...newUser,
+        uid_google: newUser.uid_google,
       });
-      delete payload.dataValues.password;
+      const token = jwt.sign({ userId: existingUser.id }, process.env.jwt_secret, { expiresIn: '1h' });
 
-      const newToken = jwt.sign(
-        { id: data.id, is_verified: payload.dataValues.is_verified },
-        process.env.jwt_secret,
-        {
-          expiresIn: '1h',
-        }
-      );
-
-      return res.send({ token: newToken, user: payload });
-    } catch (err) {
-      res.status(500).send(err?.message);
+      res.status(201).json(token,newUser);
     }
-    console.log(this.keepLogin, 'login');
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
+}
+
+async keepLogin(req, res) {
+  try {
+    const { token } = req;
+    const data = jwt.verify(token, process.env.jwt_secret);
+    console.log(data);
+    if (!data.id) throw new Error('invalid token');
+
+    console.log(data);
+
+    const payload = await db.User.findOne({
+      where: {
+        id: data.id,
+      },
+    });
+    delete payload.dataValues.password;
+
+    const newToken = jwt.sign(
+      { id: data.id, is_verified: payload.dataValues.is_verified },
+      process.env.jwt_secret,
+      {
+        expiresIn: '1h',
+      }
+    );
+
+    return res.send({ token: newToken, user: payload });
+  } catch (err) {
+    res.status(500).send(err?.message);
+  }
+  console.log(this.keepLogin, 'login');
+}
+
   async editProfile(req, res) {
     try {
       console.log(req.body);
@@ -195,8 +208,7 @@ class Auth extends Entity {
     }
   }
   async test(req, res) {
-    console.log(req.file);
-    console.log(req.body);
+ 
     if (req.file) {
       req.body.image_blob = await sharp(req.file.buffer).png().toBuffer();
       req.body.image_url = req.file.originalname;
@@ -255,8 +267,8 @@ class Auth extends Entity {
     await mailer({
       subject: 'User Verification',
       html: rendered,
-      to: 'nashrullah2344@gmail.com',
-      // to: user.dataValues.email,
+      // to: 'nashrullah2344@gmail.com',
+      to: user.dataValues.email,
     });
     res.send('verification has been sent');
   }
@@ -378,7 +390,7 @@ class Auth extends Entity {
       mailer({
         subject: 'RESET PASSWORD',
         html: rendered,
-        to: 'nashrullah2344@gmail.com',
+        // to: 'nashrullah2344@gmail.com',
         to: user.dataValues.email,
       });
 
