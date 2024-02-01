@@ -8,18 +8,12 @@ const mailer = require('../lib/nodemailer');
 const fs = require('fs');
 const mustache = require('mustache');
 const path = require('path');
-const { verify } = require('jsonwebtoken');
-
-const firebaseConfigPath = path.join(__dirname, '..', 'config', 'privateKeyFirebase.json');
-const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, 'utf8'));
-
-const firebasePrivateKey = firebaseConfig.private_key.replace(/\\n/g, '\n');
 
 class Auth extends Entity {
   constructor(model) {
     super(model);
   }
-  login(req, res) {
+login(req, res) {
     const { user, password } = req.body;
     db.User.findOne({
       where: {
@@ -95,7 +89,7 @@ class Auth extends Entity {
         res.status(500).send(err?.message);
       });
   }
-  async register(req, res) {
+async register(req, res) {
     try {
       const isUserExist = await db.User.findOne({
         where: {
@@ -123,37 +117,6 @@ class Auth extends Entity {
       res.status(500).send(err?.message);
     }
   }
-async loginWithGoogle(req, res) {
-  try {
-    const newUser = req.body;
-
-    newUser.phone_number = newUser.phone_number || null;
-    newUser.uid_facebook = newUser.uid_facebook || null;
-
-
-    const existingUser = await db.User.findOne({
-      where: {
-        email: newUser.email,
-      },
-    });
-
-    if (existingUser) {
-      res.status(200).json(existingUser);
-    } else {
-      await db.User.create({
-        ...newUser,
-        uid_google: newUser.uid_google,
-      });
-      const token = jwt.sign({ userId: existingUser.id }, process.env.jwt_secret, { expiresIn: '1h' });
-
-      res.status(201).json(token,newUser);
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-}
-
 async keepLogin(req, res) {
   try {
     const { token } = req;
@@ -184,8 +147,7 @@ async keepLogin(req, res) {
   }
   console.log(this.keepLogin, 'login');
 }
-
-  async editProfile(req, res) {
+async editProfile(req, res) {
     try {
       console.log(req.body);
       const isUserExist = await db.User.findOne({
@@ -207,9 +169,8 @@ async keepLogin(req, res) {
       res.status(500).send(err?.message);
     }
   }
-  async test(req, res) {
- 
-    if (req.file) {
+async blopUploader(req, res) {
+ if (req.file) {
       req.body.image_blob = await sharp(req.file.buffer).png().toBuffer();
       req.body.image_url = req.file.originalname;
       db.User.update(req.body, {

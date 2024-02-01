@@ -41,7 +41,7 @@ route.post(
   blobUploader({
     filetype: 'image',
   }).single('image'),
-  authController.test.bind(authController)
+  authController.blopUploader.bind(authController)
 );
 
 route.post(
@@ -56,6 +56,6 @@ route.post(
 
 route.post('/verify/token', authController.verifyUser.bind(authController));
 
-route.post('/v3', authController.loginWithGoogle.bind(authController));
+
 
 module.exports = route;

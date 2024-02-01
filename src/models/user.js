@@ -47,13 +47,13 @@ module.exports = (sequelize, DataTypes) => {
  User.init(
   {
    fullname: DataTypes.STRING,
-   email: { type: DataTypes.STRING, unique: false, allowNull: false },
-   username: { type: DataTypes.STRING, unique: false, allowNull: false },
-   phone_number: { type: DataTypes.STRING, allowNull: true },
+   email: { type: DataTypes.STRING, unique: true, allowNull: false },
+   username: { type: DataTypes.STRING, unique: true, allowNull: false },
+   phone_number: { type: DataTypes.STRING, unique: true, allowNull: true },
    password: DataTypes.STRING,
    image_url: DataTypes.TEXT('long'),
-   uid_google: { type: DataTypes.STRING, unique: false },
-   uid_facebook: { type: DataTypes.STRING, unique: false },
+   uid_google: { type: DataTypes.STRING, unique: true },
+   uid_facebook: { type: DataTypes.STRING, unique: true },
    bio: { type: DataTypes.STRING },
    is_verified: { type: DataTypes.BOOLEAN, defaultValue: false },
    login_attempt: DataTypes.INTEGER,

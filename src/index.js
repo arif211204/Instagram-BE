@@ -19,21 +19,67 @@ const db = require('./models');
 const bearerToken = require('express-bearer-token');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
+const { google } = require('googleapis');
+const jwt = require('jsonwebtoken')
 
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  'http://localhost:2700/auth/google/callback'
+);
 
-//////////////////////////////////////////////////////////////
+const scopes = [
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/userinfo.profile',
+  'openid'
+];
 
+const authorizationUrl = oauth2Client.generateAuthUrl({
+  access_type: 'offline',
+  scope: scopes,
+  include_granted_scopes: true,
+});
 
+app.get('/auth/google', (req, res) => {
+  res.redirect(authorizationUrl);
+});
 
+app.get('/auth/google/callback', async (req, res) => {
+  try {
+    const { code } = req.query;
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+    const oauth2 = google.oauth2({
+      auth: oauth2Client,
+      version: 'v2',
+    });
 
-//////////////////////////////////////////////////////////////
-const options = {
-  host: 'localhost',
-  port: 3306,
-  user: 'root',
-  password: 'password',
-  database: 'instagram',
-};
+    const { data } = await oauth2.userinfo.get();
+
+    if (!data.email || !data.name) {
+      return res.status(403).json({ error: 'Missing email or name from Google userinfo.' });
+    }
+    let user = await db.User.findOne({ where: { email: data.email } });
+
+    if (!user) {
+      user = await db.User.create({
+        email: data.email,
+        username: data.name,
+        image_url: data.picture,
+        fullname: data.name,
+      });
+    }
+    const payload = { id: user.id, username: user.username,email:user.email };
+    const token = jwt.sign(payload, process.env.jwt_secret, { expiresIn: '7h' });
+
+    res.redirect(`http://localhost:3000/login?token=${token}`);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 
 //socket io
 const http = require('http');
@@ -49,14 +95,14 @@ io.on('connection', (socket) => {
   console.log('user connected');
 
   socket.on('NEW_MESSAGE', (data) => {
-    // Assuming 'messages' is an array defined outside this function
     messages.push(data);
-    io.emit('INIT_MESSAGES', messages); // Emit the updated message to all connected clients
+    io.emit('INIT_MESSAGES', messages); 
   });
 
-  // Send messages on user connection
   socket.emit('INIT_MESSAGES', messages);
 });
+
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -91,6 +137,15 @@ server.listen(PORT, () => {
   console.log(`listen on port ${PORT}`);
   // db.sequelize.sync({ alter: true });
 });
+
+const options = {
+  host: process.env.db_host,
+  port:  process.env.db_port,
+  user:  process.env.db_username,
+  password:  process.env.db_password,
+  database:  process.env.db_database,
+};
+
 const connection = mysql.createConnection(options);
 
 async function connectToDatabase() {
