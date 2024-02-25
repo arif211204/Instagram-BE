@@ -7,6 +7,7 @@ const messageRoutes = require('./message');
 const videoRoutes = require("./video")
 const videolikeRoutes = require ("./videolike")
 const videocommentRoutes = require("./videocomment")
+const notificationRoutes = require('./notification')
 
 const routers = {
  authRoutes,
@@ -17,7 +18,8 @@ const routers = {
  messageRoutes,
  videoRoutes,
  videolikeRoutes,
- videocommentRoutes
+ videocommentRoutes,
+ notificationRoutes
 
 };
 
