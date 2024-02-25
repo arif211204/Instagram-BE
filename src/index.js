@@ -139,9 +139,7 @@ app.use('/notification', routers.notificationRoutes);
 app.use('/public/avatars', express.static(`${__dirname}/public/images/avatar`));
 app.use('/public/posts', express.static(`${__dirname}/public/images/post`));
 
-app.get('/', (req, res) => {
-  res.status(200).json('Welcome, your app is working well');
-})
+
 
 server.listen(PORT, () => {
   console.log(`listen on port ${PORT}`);
@@ -176,4 +174,3 @@ app.use((req, res, next) => {
   }
   next();
 });
-
