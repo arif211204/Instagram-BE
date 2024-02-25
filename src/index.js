@@ -18,7 +18,7 @@ const app = express();
 const cors = require('cors');
 const db = require('./models');
 const bearerToken = require('express-bearer-token');
-const mysql = require('mysql2');
+const mysql2=require('mysql2')
 const bodyParser = require('body-parser');
 const { google } = require('googleapis');
 const jwt = require('jsonwebtoken')
@@ -148,7 +148,7 @@ server.listen(PORT, () => {
   // db.sequelize.sync({ alter: true });
 });
 
-const pool = mysql.createPool({
+const pool = mysql2.createPool({
   host: process.env.MYSQL_HOST,
   port: process.env.MYSQL_PORT,
   user: process.env.MYSQL_USER,
