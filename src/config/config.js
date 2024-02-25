@@ -7,6 +7,7 @@ module.exports = {
     database: process.env.MYSQL_DATABASE,
     host: process.env.MYSQL_HOST,
     dialect: process.env.MYSQL_DIALECT,
+    port:process.env.MYSQL_PORT,
     timezone: process.env.MYSQL_TIMEZONE,
   },
   test: {
@@ -22,6 +23,7 @@ module.exports = {
     database: process.env.MYSQL_DATABASE,
     host: process.env.MYSQL_HOST,
     dialect: process.env.MYSQL_DIALECT,
+    port:process.env.MYSQL_PORT,
     timezone: process.env.MYSQL_TIMEZONE,
   },
 };
