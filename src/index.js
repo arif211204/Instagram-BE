@@ -5,6 +5,7 @@ const {
   postlikeRoutes,
   followRoutes,
   messageRoutes,
+  notificationRoutes
 } = require('./routes');
 
 require('dotenv').config();
@@ -24,7 +25,7 @@ const jwt = require('jsonwebtoken')
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_SECRET,
   'http://localhost:2700/auth/google/callback'
 );
 
@@ -91,12 +92,28 @@ global.io = io;
 module.exports = { io };
 
 const messages = [];
+const notifications = []
 io.on('connection', (socket) => {
-  console.log('user connected');
+  socket.emit('INIT_NOTIFICATIONS', notifications);
+
+  socket.on('NEW_NOTIFICATION', (data) => {
+    try {
+      if (!data || !data.receiverId || !data.message) {
+        throw new Error('Invalid notification data');
+      }
+      
+      notifications.push(data);
+      
+      io.to(data.receiverId).emit('NEW_NOTIFICATION', data);
+    } catch (error) {
+      console.error('Error handling new notification:', error.message);
+      socket.emit('ERROR_NOTIFICATION', { message: 'Failed to send notification' });
+    }
+  });
 
   socket.on('NEW_MESSAGE', (data) => {
     messages.push(data);
-    io.emit('INIT_MESSAGES', messages); 
+    io.emit('INIT_MESSAGES', messages);
   });
 
   socket.emit('INIT_MESSAGES', messages);
@@ -118,20 +135,10 @@ app.use('/messages', messageRoutes);
 app.use('/video', routers.videoRoutes);
 app.use('/videolike', routers.videolikeRoutes);
 app.use('/videocomment', routers.videocommentRoutes);
-
+app.use('/notification', routers.notificationRoutes);
 app.use('/public/avatars', express.static(`${__dirname}/public/images/avatar`));
 app.use('/public/posts', express.static(`${__dirname}/public/images/post`));
 
-app.get(
-  '/udin',
-  (req, res, next) => {
-    res.send('udin');
-    next();
-  },
-  (req, res) => {
-    res.send('udin2');
-  }
-);
 
 server.listen(PORT, () => {
   console.log(`listen on port ${PORT}`);
@@ -153,9 +160,10 @@ async function connectToDatabase() {
     await connection.connect();
     console.log('connecting to the database');
   } catch (err) {
-    console.error('Error connecting to the database:', err);
+    console.error('Error connecting to the database',err.message);
   }
 }
 
 connectToDatabase();
-console.log(options);
+// console.log(options);
+
