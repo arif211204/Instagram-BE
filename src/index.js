@@ -18,7 +18,7 @@ const app = express();
 const cors = require('cors');
 const db = require('./models');
 const bearerToken = require('express-bearer-token');
-const mysql = require('mysql');
+const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const { google } = require('googleapis');
 const jwt = require('jsonwebtoken')
@@ -145,25 +145,31 @@ server.listen(PORT, () => {
   // db.sequelize.sync({ alter: true });
 });
 
-const options = {
-  host: process.env.db_host,
-  port:  process.env.db_port,
-  user:  process.env.db_username,
-  password:  process.env.db_password,
-  database:  process.env.db_database,
-};
+const pool = mysql.createPool({
+  host: process.env.MYSQL_HOST,
+  port: process.env.MYSQL_PORT,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
+});
 
-const connection = mysql.createConnection(options);
 
-async function connectToDatabase() {
-  try {
-    await connection.connect();
-    console.log('connecting to the database');
-  } catch (err) {
-    console.error('Error connecting to the database',err.message);
+app.use((req, res, next) => {
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error getting database connection:', err);
+      return res.status(500).json({ error: 'Database connection error' });
+    }
+
+    req.dbConnection = connection;
+    next();
+  });
+});
+
+app.use((req, res, next) => {
+  if (req.dbConnection) {
+    req.dbConnection.release();
   }
-}
-
-connectToDatabase();
-// console.log(options);
+  next();
+});
 
