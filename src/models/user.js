@@ -8,41 +8,51 @@ module.exports = (sequelize, DataTypes) => {
    * This method is not a part of Sequelize lifecycle.
    * The `models/index` file will call this method automatically.
    */
-  static associate(models) {
-   // define association here
-   User.hasMany(models.Post, {
-    as: 'posts',
-    foreignKey: 'user_id'
-   });
+     static associate(models) {
+         // define association here
+         User.hasMany(models.Post, {
+             as: 'posts',
+             foreignKey: 'user_id'
+         });
 
-   User.hasMany(models.Comment, {
-    as: 'comments',
-    foreignKey: 'user_id'
-   });
+         User.hasMany(models.Comment, {
+             as: 'comments',
+             foreignKey: 'user_id'
+         });
 
-   User.hasMany(models.Follow, {
-    as: 'followed_users',
-    foreignKey: 'followed_user_id'
-   });
-   User.hasMany(models.Follow, {
-    as: 'following_users',
-    foreignKey: 'following_user_id'
-   });
+         User.hasMany(models.Follow, {
+             as: 'followed_users',
+             foreignKey: 'followed_user_id'
+         });
+         User.hasMany(models.Follow, {
+             as: 'following_users',
+             foreignKey: 'following_user_id'
+         });
 
-   User.hasMany(models.Message, {
-    as: 'message_senders',
-    foreignKey: 'user_sender_id'
-   });
-   User.hasMany(models.Message, {
-    as: 'message_recievers',
-    foreignKey: 'user_reciever_id'
-   });
+         User.hasMany(models.Message, {
+             as: 'message_senders',
+             foreignKey: 'user_sender_id'
+         });
+   
+         User.hasMany(models.Message, {
+             as: 'message_recievers',
+             foreignKey: 'user_reciever_id'
+         });
 
-   User.hasMany(models.PostLike, {
-    as: 'post_likes',
-    foreignKey: 'user_id'
-   });
-  }
+         User.hasMany(models.PostLike, {
+             as: 'post_likes',
+             foreignKey: 'user_id'
+         });
+      
+         User.hasMany(models.Notification, {
+             as: 'sentNotifications',
+             foreignKey: 'user_sender_id'
+         });
+         User.hasMany(models.Notification, {
+             as: 'receivedNotifications',
+             foreignKey: 'user_receiver_id'
+         });
+     }
  }
  User.init(
   {
@@ -52,8 +62,6 @@ module.exports = (sequelize, DataTypes) => {
    phone_number: { type: DataTypes.STRING, unique: true, allowNull: true },
    password: DataTypes.STRING,
    image_url: DataTypes.TEXT('long'),
-   uid_google: { type: DataTypes.STRING, unique: true },
-   uid_facebook: { type: DataTypes.STRING, unique: true },
    bio: { type: DataTypes.STRING },
    is_verified: { type: DataTypes.BOOLEAN, defaultValue: false },
    login_attempt: DataTypes.INTEGER,
